@@ -1,0 +1,30 @@
+name: Build launcher APK
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build release APK
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk ../tvhome.apk
+          sha256sum ../tvhome.apk
+      - name: Publish as a release in this fork
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tvhome-${{ github.run_number }}
+          name: TV home launcher build ${{ github.run_number }}
+          files: tvhome.apk
